@@ -23,8 +23,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ILogService, LogService>();
-builder.Services.AddDbContext<StargateContext>(options => 
-    options.UseSqlite(builder.Configuration.GetConnectionString("StarbaseApiDatabase")));
+builder.Services.AddDbContext<StargateContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("StargateDb")));
 
 builder.Services.AddMediatR(cfg =>
 {

@@ -51,8 +51,7 @@ namespace StargateAPI.Business.Commands
                 return new CreatePersonResult()
                 {
                     Id = newPerson.Id
-                };
-          
+                };        
         }
     }
 

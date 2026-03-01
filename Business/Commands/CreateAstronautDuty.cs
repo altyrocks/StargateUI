@@ -11,7 +11,7 @@ namespace StargateAPI.Business.Commands
 {
     public class CreateAstronautDuty : IRequest<CreateAstronautDutyResult>
     {
-        public required string Name { get; set; }
+        public int PersonId { get; set; }
 
         public required string Rank { get; set; }
 
@@ -31,22 +31,29 @@ namespace StargateAPI.Business.Commands
 
         public Task Process(CreateAstronautDuty request, CancellationToken cancellationToken)
         {
-            var person = _context.People.AsNoTracking().FirstOrDefault(z => z.Name == request.Name);
+            var person = _context.People
+                .AsNoTracking()
+                .FirstOrDefault(z => z.Id == request.PersonId);
 
-            if (person is null) throw new BadHttpRequestException($"Person '{request.Name}' not found.");
+            if (person is null)
+                throw new BadHttpRequestException($"Person with id '{request.PersonId}' not found.");
 
-            var verifyNoPreviousDuty = _context.AstronautDuties.
-                FirstOrDefault(z => z.DutyTitle == request.DutyTitle && z.DutyStartDate == request.DutyStartDate);
+            var verifyNoPreviousDuty = _context.AstronautDuties
+                .FirstOrDefault(z =>
+                    z.PersonId == request.PersonId &&
+                    z.DutyTitle == request.DutyTitle &&
+                    z.DutyStartDate == request.DutyStartDate);
 
             if (verifyNoPreviousDuty is not null)
-                throw new BadHttpRequestException($"Duty '{request.DutyTitle}' already exists with start date {request.DutyStartDate:yyyy-MM-dd}.");
+                throw new BadHttpRequestException(
+                    $"Duty '{request.DutyTitle}' already exists for person {request.PersonId} with start date {request.DutyStartDate:yyyy-MM-dd}.");
 
             return Task.CompletedTask;
         }
     }
 
     public class CreateAstronautDutyHandler
-        : IRequestHandler<CreateAstronautDuty, CreateAstronautDutyResult>
+    : IRequestHandler<CreateAstronautDuty, CreateAstronautDutyResult>
     {
         private readonly StargateContext _context;
         private readonly ILogService _logService;
@@ -65,56 +72,53 @@ namespace StargateAPI.Business.Commands
 
             try
             {
-                // extra safety in case model validation or pre-processor misses something
-                if (string.IsNullOrWhiteSpace(request.Name) ||
+                // basic validation
+                if (request.PersonId <= 0 ||
                     string.IsNullOrWhiteSpace(request.Rank) ||
                     string.IsNullOrWhiteSpace(request.DutyTitle))
                 {
                     result.Success = false;
-                    result.Message = "Name, Rank, and DutyTitle are required.";
+                    result.Message = "PersonId, Rank, and DutyTitle are required.";
                     result.ResponseCode = (int)HttpStatusCode.BadRequest;
                     return result;
                 }
 
-                var name = request.Name.Trim();
                 var dutyStart = request.DutyStartDate.Date;
 
-                // get person by name (parameterized)
-                const string personSql = @"SELECT * FROM [Person]
-                                           WHERE Name = @Name;";
+                // make sure the person exists
+                var person = await _context.People
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == request.PersonId, cancellationToken);
 
-                var person = await _context.Connection.QueryFirstOrDefaultAsync<Person>(
-                    new CommandDefinition(
-                        personSql,
-                        new { Name = name },
-                        cancellationToken: cancellationToken));
-
-                if (person == null)
+                if (person is null)
                 {
                     result.Success = false;
-                    result.Message = $"Person '{name}' not found.";
-                    result.ResponseCode = (int)HttpStatusCode.NotFound;
-
-                    await _logService.InfoAsync(
-                        nameof(CreateAstronautDutyHandler),
-                        $"Attempt to add duty for unknown person '{name}'.",
-                        null,
-                        cancellationToken);
-
+                    result.Message = $"Person with id '{request.PersonId}' not found.";
+                    result.ResponseCode = (int)HttpStatusCode.BadRequest;
                     return result;
                 }
 
-                // get AstronautDetail (if any)
-                const string detailSql = @"SELECT * FROM [AstronautDetail]
-                                           WHERE PersonId = @PersonId;";
+                // prevent duplicate duty for same person / title / start date
+                var verifyNoPreviousDuty = await _context.AstronautDuties
+                    .FirstOrDefaultAsync(d =>
+                        d.PersonId == request.PersonId &&
+                        d.DutyTitle == request.DutyTitle &&
+                        d.DutyStartDate == dutyStart,
+                        cancellationToken);
 
-                var astronautDetail = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDetail>(
-                    new CommandDefinition(
-                        detailSql,
-                        new { PersonId = person.Id },
-                        cancellationToken: cancellationToken));
+                if (verifyNoPreviousDuty is not null)
+                {
+                    result.Success = false;
+                    result.Message =
+                        $"Duty '{request.DutyTitle}' already exists for person {request.PersonId} with start date {dutyStart:yyyy-MM-dd}.";
+                    result.ResponseCode = (int)HttpStatusCode.BadRequest;
+                    return result;
+                }
 
-                // create or update AstronautDetail (career info)
+                // load or create AstronautDetail for this person
+                var astronautDetail = await _context.AstronautDetails
+                    .FirstOrDefaultAsync(d => d.PersonId == person.Id, cancellationToken);
+
                 if (astronautDetail == null)
                 {
                     astronautDetail = new AstronautDetail
@@ -124,44 +128,30 @@ namespace StargateAPI.Business.Commands
                         CurrentRank = request.Rank.Trim(),
                         CareerStartDate = dutyStart
                     };
-
-                    if (request.DutyTitle.Equals("RETIRED", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // career end date is one day before retired duty start
-                        astronautDetail.CareerEndDate = dutyStart.AddDays(-1);
-                    }
-
-                    await _context.AstronautDetails.AddAsync(astronautDetail, cancellationToken);
+                    _context.AstronautDetails.Add(astronautDetail);
                 }
                 else
                 {
                     astronautDetail.CurrentDutyTitle = request.DutyTitle.Trim();
                     astronautDetail.CurrentRank = request.Rank.Trim();
-
-                    if (request.DutyTitle.Equals("RETIRED", StringComparison.OrdinalIgnoreCase))
-                    {
-                        astronautDetail.CareerEndDate = dutyStart.AddDays(-1);
-                    }
-
                     _context.AstronautDetails.Update(astronautDetail);
                 }
 
-                // get last AstronautDuty (most recent) for this person
-                const string dutySql = @"SELECT * FROM [AstronautDuty]
-                                         WHERE PersonId = @PersonId              
-                                         ORDER BY DutyStartDate DESC
-                                         LIMIT 1;";
+                // if RETIRED, set career end date to day before retired duty starts
+                if (request.DutyTitle.Equals("RETIRED", StringComparison.OrdinalIgnoreCase))
+                {
+                    astronautDetail.CareerEndDate = dutyStart.AddDays(-1);
+                }
 
-                var lastDuty = await _context.Connection.QueryFirstOrDefaultAsync<AstronautDuty>(
-                    new CommandDefinition(
-                        dutySql,
-                        new { PersonId = person.Id },
-                        cancellationToken: cancellationToken));
+                // get last duty (most recent) for this person
+                var lastDuty = await _context.AstronautDuties
+                    .Where(d => d.PersonId == person.Id)
+                    .OrderByDescending(d => d.DutyStartDate)
+                    .FirstOrDefaultAsync(cancellationToken);
 
-                // enforce: previous duty end date = day before new start (if previous duty exists)
                 if (lastDuty != null)
                 {
-                    // Optional chronological check
+                    // new start must be after last start
                     if (dutyStart <= lastDuty.DutyStartDate.Date)
                     {
                         result.Success = false;
@@ -170,49 +160,38 @@ namespace StargateAPI.Business.Commands
                         return result;
                     }
 
-                    lastDuty.DutyEndDate = dutyStart.AddDays(-1);
+                    // guard against MinValue edge case
+                    var endSource = dutyStart == DateTime.MinValue
+                        ? lastDuty.DutyStartDate.Date
+                        : dutyStart;
+
+                    lastDuty.DutyEndDate = endSource.AddDays(-1);
                     _context.AstronautDuties.Update(lastDuty);
                 }
 
-                // create new current AstronautDuty (EndDate = null)
-                var newAstronautDuty = new AstronautDuty
+                // create new current duty (EndDate = null)
+                var duty = new AstronautDuty
                 {
-                    PersonId = person.Id,
+                    PersonId = request.PersonId,
                     Rank = request.Rank.Trim(),
                     DutyTitle = request.DutyTitle.Trim(),
                     DutyStartDate = dutyStart,
                     DutyEndDate = null
                 };
 
-                await _context.AstronautDuties.AddAsync(newAstronautDuty, cancellationToken);
-
+                _context.AstronautDuties.Add(duty);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                result.Id = newAstronautDuty.Id;
                 result.Success = true;
-                result.Message = "Astronaut duty created successfully.";
                 result.ResponseCode = (int)HttpStatusCode.Created;
-
-                await _logService.InfoAsync(
-                    nameof(CreateAstronautDutyHandler),
-                    $"Created new duty '{newAstronautDuty.DutyTitle}' for '{name}' starting {dutyStart:yyyy-MM-dd}.",
-                    null,
-                    cancellationToken);
-
+                result.Id = duty.Id;
                 return result;
             }
             catch (Exception ex)
             {
                 result.Success = false;
-                result.Message = "An error occurred while creating the astronaut duty.";
+                result.Message = ex.Message;
                 result.ResponseCode = (int)HttpStatusCode.InternalServerError;
-
-                await _logService.ErrorAsync(
-                    nameof(CreateAstronautDutyHandler),
-                    "Error in CreateAstronautDuty.",
-                    ex.ToString(),
-                    cancellationToken);
-
                 return result;
             }
         }
