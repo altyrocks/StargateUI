@@ -36,7 +36,6 @@ namespace StargateAPI.Business.Commands
                 return result;
             }
 
-            // enforce uniqueness
             var exists = await _context.People
                 .AnyAsync(p => p.Name.ToLower() == request.Name.ToLower() && p.Id != request.Id,
                           cancellationToken);

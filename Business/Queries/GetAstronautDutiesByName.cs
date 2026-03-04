@@ -33,8 +33,7 @@ namespace StargateAPI.Business.Queries
 
             try
             {
-                // 1) Basic validation for empty/whitespace name
-                if (string.IsNullOrWhiteSpace(request.Name))
+                 if (string.IsNullOrWhiteSpace(request.Name))
                 {
                     result.Success = false;
                     result.Message = "Name is required.";
@@ -45,7 +44,6 @@ namespace StargateAPI.Business.Queries
 
                 var normalizedName = request.Name.Trim();
 
-                // 2) Find person by name (case-insensitive)
                 var person = await _context.People
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
@@ -68,7 +66,6 @@ namespace StargateAPI.Business.Queries
                     return result;
                 }
 
-                // 3) Get latest duty for this person via Dapper on same connection
                 const string dutySql = @"
                                         SELECT *
                                         FROM [AstronautDuty]
@@ -76,6 +73,7 @@ namespace StargateAPI.Business.Queries
                                         ORDER BY DutyStartDate DESC;";
 
                 var connection = _context.Database.GetDbConnection();
+
                 if (connection.State != System.Data.ConnectionState.Open)
                     await connection.OpenAsync(cancellationToken);
 
@@ -99,7 +97,6 @@ namespace StargateAPI.Business.Queries
                     return result;
                 }
 
-                // 4) Map to AstronautDutyDto as tests expect
                 result.Data = new AstronautDutyDto
                 {
                     Id =latestDuty.Id,

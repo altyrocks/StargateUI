@@ -6,16 +6,15 @@
 
         public DateTime TimestampUtc { get; set; }
 
-        // "INFO" or "ERROR"
+        // INFO or ERROR
         public string Level { get; set; } = string.Empty;
 
-        // e.g. "GetPersonByNameHandler"
+        // GetPersonByNameHandler
         public string Source { get; set; } = string.Empty;
 
-        // Short message: what happened
         public string Message { get; set; } = string.Empty;
 
-        // Stack trace, JSON of payload, etc.
+        // Stack trace, JSON of payload
         public string? Details { get; set; }
     }
 }

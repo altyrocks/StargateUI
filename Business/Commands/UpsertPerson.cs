@@ -46,10 +46,10 @@ namespace StargateAPI.Business.Commands
 
                 if (existing is not null)
                 {
-                    // normalize casing
                     if (!string.Equals(existing.Name, normalizedName, StringComparison.Ordinal))
                     {
                         existing.Name = normalizedName;
+
                         await _context.SaveChangesAsync(cancellationToken);
                     }
 

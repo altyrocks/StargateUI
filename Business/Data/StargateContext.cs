@@ -19,7 +19,7 @@ namespace StargateAPI.Business.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // 🔒 Enforce uniqueness at database level
+            // Enforce uniqueness at database level
             modelBuilder.Entity<Person>()
                 .HasIndex(p => p.Name)
                 .IsUnique();
@@ -27,7 +27,6 @@ namespace StargateAPI.Business.Data
             // Apply any IEntityTypeConfiguration implementations
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(StargateContext).Assembly);
 
-            // Seed initial data
             SeedData(modelBuilder);
 
             base.OnModelCreating(modelBuilder);

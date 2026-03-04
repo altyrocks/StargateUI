@@ -47,14 +47,12 @@ namespace StargateAPI.Business.Queries
 
             try
             {
-                // use parameterized query (not string concatenation)
                 var people = await _context.Connection.QueryAsync<PersonAstronautDto>(
                     new CommandDefinition(
                         sql,
                         new { Name = name },
                         cancellationToken: cancellationToken));
 
-                // log success or not found
                 var person = people.FirstOrDefault();
 
                 result.Person = person;
@@ -73,7 +71,6 @@ namespace StargateAPI.Business.Queries
                 }
                 else
                 {
-                    // Keep the defaults: Success = true, Message = "Successful"
                     await _logService.InfoAsync(
                         nameof(GetPersonByNameHandler),
                         $"Person '{name}' retrieved successfully.",

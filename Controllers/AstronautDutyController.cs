@@ -52,6 +52,7 @@ namespace StargateAPI.Controllers
         public async Task<IActionResult> UpdateDuty([FromBody] UpdateAstronautDuty command)
         {
             var result = await _mediator.Send(command);
+
             return this.GetResponse(result);
         }
     }

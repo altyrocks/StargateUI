@@ -82,7 +82,6 @@ public class AstronautDutyDomainService : IAstronautDutyDomainService
             .Select(d => d.Id)
             .ToListAsync(cancellationToken);
 
-        Console.WriteLine("Existing Duty IDs: " + string.Join(",", allIds));
         var duty = await _context.AstronautDuties
             .FirstOrDefaultAsync(d => d.Id == Id, cancellationToken);
 

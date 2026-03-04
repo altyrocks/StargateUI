@@ -6,21 +6,12 @@ using System.Net;
 
 namespace StargateAPI.Business.Commands
 {
-    // ==============================
-    // Request
-    // ==============================
-
     public class CreatePerson : IRequest<CreatePersonResult>
     {
         public required string Name { get; set; } = string.Empty;
     }
 
-    // ==============================
-    // Handler
-    // ==============================
-
-    public class CreatePersonHandler
-        : IRequestHandler<CreatePerson, CreatePersonResult>
+    public class CreatePersonHandler : IRequestHandler<CreatePerson, CreatePersonResult>
     {
         private readonly StargateContext _context;
 
@@ -37,7 +28,6 @@ namespace StargateAPI.Business.Commands
 
             try
             {
-                // 1️⃣ Validate required name
                 if (string.IsNullOrWhiteSpace(request.Name))
                 {
                     result.Success = false;
@@ -48,7 +38,6 @@ namespace StargateAPI.Business.Commands
 
                 var normalizedName = request.Name.Trim();
 
-                // 2️⃣ Enforce uniqueness (case-insensitive)
                 var exists = await _context.People
                     .AnyAsync(
                         p => p.Name.ToLower() == normalizedName.ToLower(),
@@ -57,13 +46,11 @@ namespace StargateAPI.Business.Commands
                 if (exists)
                 {
                     result.Success = false;
-                    result.Message =
-                        $"A person named '{normalizedName}' already exists.";
+                    result.Message = $"A person named '{normalizedName}' already exists.";
                     result.ResponseCode = (int)HttpStatusCode.BadRequest;
                     return result;
                 }
 
-                // 3️⃣ Create person
                 var newPerson = new Person
                 {
                     Name = normalizedName
@@ -72,7 +59,6 @@ namespace StargateAPI.Business.Commands
                 await _context.People.AddAsync(newPerson, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // 4️⃣ Return success response
                 result.Success = true;
                 result.Message = "Person created successfully.";
                 result.ResponseCode = (int)HttpStatusCode.Created;
@@ -89,10 +75,6 @@ namespace StargateAPI.Business.Commands
             }
         }
     }
-
-    // ==============================
-    // Response
-    // ==============================
 
     public class CreatePersonResult : BaseResponse
     {

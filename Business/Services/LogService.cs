@@ -49,6 +49,7 @@
             };
 
             _context.ProcessLogs.Add(log);
+
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

@@ -18,8 +18,7 @@ namespace StargateAPI.Business.Commands
         public int? Id { get; set; }
     }
 
-    public class UpdateAstronautDutyHandler
-        : IRequestHandler<UpdateAstronautDuty, UpdateAstronautDutyResult>
+    public class UpdateAstronautDutyHandler : IRequestHandler<UpdateAstronautDuty, UpdateAstronautDutyResult>
     {
         private readonly IAstronautDutyDomainService _domainService;
         private readonly ILogService _logService;
