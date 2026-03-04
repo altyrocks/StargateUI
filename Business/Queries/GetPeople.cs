@@ -39,14 +39,14 @@ namespace StargateAPI.Business.Queries
                         sql,
                         cancellationToken: cancellationToken));
 
-                result.People = people.ToList();
+                result.Data = people.ToList();
                 result.Success = true;
                 result.Message = "People retrieved successfully.";
                 result.ResponseCode = (int)HttpStatusCode.OK;
 
                 await _logService.InfoAsync(
                     nameof(GetPeopleHandler),
-                    $"Retrieved {result.People.Count} people.",
+                    $"Retrieved {result.Data.Count} people.",
                     null,
                     cancellationToken);
 
@@ -71,6 +71,6 @@ namespace StargateAPI.Business.Queries
 
     public class GetPeopleResult : BaseResponse
     {
-        public List<Person> People { get; set; } = new();
+        public List<Person>? Data { get; set; }
     }
 }

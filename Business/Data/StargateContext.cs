@@ -6,20 +6,28 @@ namespace StargateAPI.Business.Data
     public class StargateContext : DbContext
     {
         public IDbConnection Connection => Database.GetDbConnection();
+
         public DbSet<Person> People { get; set; }
         public DbSet<AstronautDetail> AstronautDetails { get; set; }
         public DbSet<AstronautDuty> AstronautDuties { get; set; }
         public DbSet<ProcessLog> ProcessLogs { get; set; } = null!;
 
         public StargateContext(DbContextOptions<StargateContext> options)
-        : base(options)
+            : base(options)
         {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // 🔒 Enforce uniqueness at database level
+            modelBuilder.Entity<Person>()
+                .HasIndex(p => p.Name)
+                .IsUnique();
+
+            // Apply any IEntityTypeConfiguration implementations
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(StargateContext).Assembly);
 
+            // Seed initial data
             SeedData(modelBuilder);
 
             base.OnModelCreating(modelBuilder);
@@ -27,7 +35,6 @@ namespace StargateAPI.Business.Data
 
         private static void SeedData(ModelBuilder modelBuilder)
         {
-            //add seed data
             modelBuilder.Entity<Person>()
                 .HasData(
                     new Person

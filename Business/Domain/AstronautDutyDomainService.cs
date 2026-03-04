@@ -70,4 +70,32 @@ public class AstronautDutyDomainService : IAstronautDutyDomainService
 
         return newDuty;
     }
+
+    public async Task UpdateDutyAsync(
+        int Id,
+        string rank,
+        string dutyTitle,
+        DateTime dutyStartDate,
+        CancellationToken cancellationToken)
+    {
+        var allIds = await _context.AstronautDuties
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        Console.WriteLine("Existing Duty IDs: " + string.Join(",", allIds));
+        var duty = await _context.AstronautDuties
+            .FirstOrDefaultAsync(d => d.Id == Id, cancellationToken);
+
+        if (duty == null)
+            throw new InvalidOperationException("Duty not found.");
+
+        if (string.IsNullOrWhiteSpace(rank) || string.IsNullOrWhiteSpace(dutyTitle))
+            throw new InvalidOperationException("Rank and Duty Title are required.");
+
+        duty.Rank = rank.Trim();
+        duty.DutyTitle = dutyTitle.Trim();
+        duty.DutyStartDate = dutyStartDate.Date;
+
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

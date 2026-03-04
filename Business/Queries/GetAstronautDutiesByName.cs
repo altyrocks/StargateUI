@@ -85,14 +85,14 @@ namespace StargateAPI.Business.Queries
 
                 if (latestDuty is null)
                 {
-                    result.Success = false;
-                    result.Message = $"No duty records found for '{normalizedName}'.";
-                    result.ResponseCode = (int)HttpStatusCode.NotFound;
+                    result.Success = true;
+                    result.Message = $"No duty assigned for '{normalizedName}'.";
+                    result.ResponseCode = (int)HttpStatusCode.OK;
                     result.Data = null;
 
                     await _logService.InfoAsync(
                         nameof(GetAstronautDutiesByNameHandler),
-                        $"No duty records found for '{normalizedName}'.",
+                        $"No duty assigned for '{normalizedName}'.",
                         null,
                         cancellationToken);
 
@@ -102,6 +102,7 @@ namespace StargateAPI.Business.Queries
                 // 4) Map to AstronautDutyDto as tests expect
                 result.Data = new AstronautDutyDto
                 {
+                    Id =latestDuty.Id,
                     Name = person.Name,
                     Assignment = latestDuty.DutyTitle ?? string.Empty,
                     Rank = latestDuty.Rank ?? string.Empty,
@@ -134,8 +135,7 @@ namespace StargateAPI.Business.Queries
                     cancellationToken);
 
                 return result;
-            }
-        
+            }    
         }
     }
 }

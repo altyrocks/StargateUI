@@ -6,38 +6,29 @@ using System.Net;
 
 namespace StargateAPI.Business.Commands
 {
-    // ==============================
-    // Request
-    // ==============================
-
-    public class CreatePerson : IRequest<CreatePersonResult>
+    public class UpsertPerson : IRequest<UpsertPersonResult>
     {
-        public required string Name { get; set; } = string.Empty;
+        public required string Name { get; set; }
     }
 
-    // ==============================
-    // Handler
-    // ==============================
-
-    public class CreatePersonHandler
-        : IRequestHandler<CreatePerson, CreatePersonResult>
+    public class UpsertPersonHandler
+        : IRequestHandler<UpsertPerson, UpsertPersonResult>
     {
         private readonly StargateContext _context;
 
-        public CreatePersonHandler(StargateContext context)
+        public UpsertPersonHandler(StargateContext context)
         {
             _context = context;
         }
 
-        public async Task<CreatePersonResult> Handle(
-            CreatePerson request,
+        public async Task<UpsertPersonResult> Handle(
+            UpsertPerson request,
             CancellationToken cancellationToken)
         {
-            var result = new CreatePersonResult();
+            var result = new UpsertPersonResult();
 
             try
             {
-                // 1️⃣ Validate required name
                 if (string.IsNullOrWhiteSpace(request.Name))
                 {
                     result.Success = false;
@@ -48,22 +39,28 @@ namespace StargateAPI.Business.Commands
 
                 var normalizedName = request.Name.Trim();
 
-                // 2️⃣ Enforce uniqueness (case-insensitive)
-                var exists = await _context.People
-                    .AnyAsync(
+                var existing = await _context.People
+                    .FirstOrDefaultAsync(
                         p => p.Name.ToLower() == normalizedName.ToLower(),
                         cancellationToken);
 
-                if (exists)
+                if (existing is not null)
                 {
-                    result.Success = false;
-                    result.Message =
-                        $"A person named '{normalizedName}' already exists.";
-                    result.ResponseCode = (int)HttpStatusCode.BadRequest;
+                    // normalize casing
+                    if (!string.Equals(existing.Name, normalizedName, StringComparison.Ordinal))
+                    {
+                        existing.Name = normalizedName;
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+
+                    result.Success = true;
+                    result.Message = "Person updated successfully.";
+                    result.ResponseCode = (int)HttpStatusCode.OK;
+                    result.Id = existing.Id;
+
                     return result;
                 }
 
-                // 3️⃣ Create person
                 var newPerson = new Person
                 {
                     Name = normalizedName
@@ -72,7 +69,6 @@ namespace StargateAPI.Business.Commands
                 await _context.People.AddAsync(newPerson, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // 4️⃣ Return success response
                 result.Success = true;
                 result.Message = "Person created successfully.";
                 result.ResponseCode = (int)HttpStatusCode.Created;
@@ -80,7 +76,7 @@ namespace StargateAPI.Business.Commands
 
                 return result;
             }
-            catch (Exception)
+            catch
             {
                 result.Success = false;
                 result.Message = "An unexpected error occurred.";
@@ -90,11 +86,7 @@ namespace StargateAPI.Business.Commands
         }
     }
 
-    // ==============================
-    // Response
-    // ==============================
-
-    public class CreatePersonResult : BaseResponse
+    public class UpsertPersonResult : BaseResponse
     {
         public int Id { get; set; }
     }

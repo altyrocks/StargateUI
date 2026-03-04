@@ -8,4 +8,11 @@ public interface IAstronautDutyDomainService
         string title,
         DateTime startDate,
         CancellationToken cancellationToken);
-}
+
+        Task UpdateDutyAsync(
+        int Id,
+        string rank,
+        string dutyTitle,
+        DateTime dutyStartDate,
+        CancellationToken cancellationToken);
+    }
