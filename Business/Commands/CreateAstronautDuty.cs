@@ -1,6 +1,6 @@
 ﻿using MediatR;
-using StargateAPI.Business.Common;
 using StargateAPI.Business.Data;
+using StargateAPI.Business.Common;
 using StargateAPI.Business.Services;
 
 namespace StargateAPI.Business.Commands
@@ -21,11 +21,10 @@ namespace StargateAPI.Business.Commands
         public int? Id { get; set; }
     }
 
-    public class CreateAstronautDutyHandler
-        : IRequestHandler<CreateAstronautDuty, CreateAstronautDutyResult>
+    public class CreateAstronautDutyHandler : IRequestHandler<CreateAstronautDuty, CreateAstronautDutyResult>
     {
-        private readonly StargateContext _context;
         private readonly ILogService _logService;
+        private readonly StargateContext _context;
         private readonly IAstronautDutyDomainService _domainService;
 
         public CreateAstronautDutyHandler(StargateContext context, ILogService logService, IAstronautDutyDomainService domainService)
@@ -50,6 +49,7 @@ namespace StargateAPI.Business.Commands
                     result.Success = false;
                     result.Message = "PersonId, Rank, and DutyTitle are required.";
                     result.ResponseCode = 400;
+
                     return result;
                 }
 

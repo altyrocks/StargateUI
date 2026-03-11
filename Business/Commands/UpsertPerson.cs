@@ -34,6 +34,7 @@ namespace StargateAPI.Business.Commands
                     result.Success = false;
                     result.Message = "Name is required.";
                     result.ResponseCode = (int)HttpStatusCode.BadRequest;
+
                     return result;
                 }
 
@@ -81,6 +82,7 @@ namespace StargateAPI.Business.Commands
                 result.Success = false;
                 result.Message = "An unexpected error occurred.";
                 result.ResponseCode = (int)HttpStatusCode.InternalServerError;
+
                 return result;
             }
         }

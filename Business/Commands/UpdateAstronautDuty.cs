@@ -1,7 +1,7 @@
 ﻿using MediatR;
+using System.Net;
 using StargateAPI.Business.Common;
 using StargateAPI.Business.Services;
-using System.Net;
 
 namespace StargateAPI.Business.Commands
 {
@@ -64,6 +64,7 @@ namespace StargateAPI.Business.Commands
                 result.Success = false;
                 result.ResponseCode = (int)HttpStatusCode.BadRequest;
                 result.Message = ex.Message;
+
                 return result;
             }
         }

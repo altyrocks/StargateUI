@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using StargateAPI.Business.Common;
-using StargateAPI.Business.Data;
 using System.Net;
+using StargateAPI.Business.Data;
+using StargateAPI.Business.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace StargateAPI.Business.Commands
 {
@@ -33,6 +33,7 @@ namespace StargateAPI.Business.Commands
                 result.Success = false;
                 result.Message = "Person not found.";
                 result.ResponseCode = (int)HttpStatusCode.NotFound;
+
                 return result;
             }
 
@@ -45,6 +46,7 @@ namespace StargateAPI.Business.Commands
                 result.Success = false;
                 result.Message = $"A person named '{request.Name}' already exists.";
                 result.ResponseCode = (int)HttpStatusCode.BadRequest;
+
                 return result;
             }
 
