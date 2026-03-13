@@ -4,7 +4,7 @@ using StargateAPI.Business.Data;
 using StargateAPI.Business.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace StargateAPI.Business.Commands
+namespace StargateAPI.Business.Update
 {
     public class UpdatePerson : IRequest<BaseResponse>
     {

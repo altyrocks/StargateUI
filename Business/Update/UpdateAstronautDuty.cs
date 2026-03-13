@@ -3,7 +3,7 @@ using System.Net;
 using StargateAPI.Business.Common;
 using StargateAPI.Business.Services;
 
-namespace StargateAPI.Business.Commands
+namespace StargateAPI.Business.Update
 {
     public class UpdateAstronautDuty : IRequest<UpdateAstronautDutyResult>
     {

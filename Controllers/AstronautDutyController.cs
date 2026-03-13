@@ -1,21 +1,18 @@
 ﻿using MediatR;
-using StargateAPI.Business.Common;
-using Microsoft.AspNetCore.Mvc;
-using StargateAPI.Business.Commands;
-using StargateAPI.Business.Queries;
 using System.Net;
+using StargateAPI.Business.Get;
+using Microsoft.AspNetCore.Mvc;
+using StargateAPI.Business.Update;
+using StargateAPI.Business.Common;
+using StargateAPI.Business.Commands;
 
 namespace StargateAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AstronautDutyController : ControllerBase
+    public class AstronautDutyController(IMediator mediator) : ControllerBase
     {
-        private readonly IMediator _mediator;
-        public AstronautDutyController(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
+        private readonly IMediator _mediator = mediator;
 
         [HttpGet("{name}")]
         public async Task<IActionResult> GetAstronautDutiesByName(string name)

@@ -4,7 +4,7 @@ using StargateAPI.Business.Common;
 using StargateAPI.Business.Data;
 using System.Net;
 
-namespace StargateAPI.Business.Commands
+namespace StargateAPI.Business.Update
 {
     public class UpsertPerson : IRequest<UpsertPersonResult>
     {

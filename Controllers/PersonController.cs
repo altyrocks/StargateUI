@@ -2,8 +2,8 @@
 using System.Net;
 using StargateAPI.Business.Get;
 using Microsoft.AspNetCore.Mvc;
+using StargateAPI.Business.Update;
 using StargateAPI.Business.Common;
-using StargateAPI.Business.Queries;
 using StargateAPI.Business.Commands;
 
 namespace StargateAPI.Controllers
